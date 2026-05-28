@@ -1,12 +1,20 @@
 import '../App.css';
 
 const FEEDBACK_MESSAGES = {
-  idle: 'START SPEAKING!',
+  idle: 'Say the animal name!',
   correct: (transcript) => `[${transcript}] is Correct, congratulations!`,
   wrong: (transcript) => `[${transcript}] is Wrongly DETECTED, try again!`,
 };
 
-function getFeedbackMessage(feedback, transcript) {
+function getFeedbackMessage(quizStatus, feedback, transcript, totalRounds) {
+  if (quizStatus === 'idle') {
+    return 'Press Start quiz to begin!';
+  }
+
+  if (quizStatus === 'complete') {
+    return `You finished all ${totalRounds} animals! Great job!`;
+  }
+
   if (feedback === 'idle') {
     return FEEDBACK_MESSAGES.idle;
   }
@@ -16,15 +24,26 @@ function getFeedbackMessage(feedback, transcript) {
 }
 
 function VoiceQuizView({
+  quizStatus,
+  currentRound,
+  totalRounds,
   isListening,
   transcript,
   currentAnimal,
-  startListening,
+  startQuiz,
   feedback,
 }) {
+  const showStartButton = quizStatus === 'idle' || quizStatus === 'complete';
+
   return (
     <div className="voice-quiz">
       <h1>Voice Recognition Demo</h1>
+
+      {quizStatus === 'in_progress' && (
+        <p className="quiz-progress">
+          Round {currentRound} of {totalRounds}
+        </p>
+      )}
 
       {currentAnimal && (
         <img
@@ -35,13 +54,21 @@ function VoiceQuizView({
         />
       )}
 
-      <button className="listen-button" onClick={startListening}>
-        {isListening ? 'Listening...' : 'Start Listening'}
-      </button>
+      {showStartButton && (
+        <button className="listen-button" onClick={startQuiz}>
+          Start quiz
+        </button>
+      )}
+
+      {quizStatus === 'in_progress' && (
+        <p className="listening-status">
+          {isListening ? 'Listening...' : 'Processing...'}
+        </p>
+      )}
 
       <h2>Heard: {transcript || '...'}</h2>
 
-      <h1>{getFeedbackMessage(feedback, transcript)}</h1>
+      <h1>{getFeedbackMessage(quizStatus, feedback, transcript, totalRounds)}</h1>
     </div>
   );
 }

@@ -17,3 +17,9 @@
   cursor: pointer;
   margin-bottom: 30px;
 }
+
+.quiz-progress,
+.listening-status {
+  margin: 0 0 16px;
+  font-size: 18px;
+}

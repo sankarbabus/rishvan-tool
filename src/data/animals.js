@@ -13,7 +13,23 @@ export const ANIMALS = [
   },
 ];
 
-export function pickRandomAnimal() {
-  const index = Math.floor(Math.random() * ANIMALS.length);
-  return ANIMALS[index];
+function shuffleAnimals(animals) {
+  const shuffled = [...animals];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+export function createQuizQueue(roundCount) {
+  const queue = [];
+
+  while (queue.length < roundCount) {
+    queue.push(...shuffleAnimals(ANIMALS));
+  }
+
+  return queue.slice(0, roundCount);
 }
