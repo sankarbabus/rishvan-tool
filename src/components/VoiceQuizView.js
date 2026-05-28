@@ -3,7 +3,7 @@ import '../App.css';
 const FEEDBACK_MESSAGES = {
   idle: 'START SPEAKING!',
   correct: (transcript) => `[${transcript}] is Correct, congratulations!`,
-  wrong: (transcript) => `[${transcript}] is Wrong ANIMAL DETECTED, try again!`,
+  wrong: (transcript) => `[${transcript}] is Wrongly DETECTED, try again!`,
 };
 
 function getFeedbackMessage(feedback, transcript) {
