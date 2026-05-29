@@ -53,7 +53,7 @@ export function useAnimalVoiceQuiz() {
     const recognition = new SpeechRecognition();
 
     recognition.continuous = true;
-    recognition.lang = 'en-US';
+    recognition.lang = 'fr-FR';
     recognition.interimResults = false;
 
     recognition.onstart = () => {

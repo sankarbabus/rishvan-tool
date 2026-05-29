@@ -1,16 +1,36 @@
 export const ANIMALS = [
   {
-    imageUrl: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-    name: 'dog',
+    imageUrl: 'assets/dog.png',
+    name: 'chien',
   },
   {
-    imageUrl: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-    name: 'elephant',
+    imageUrl: 'assets/elephant.png',
+    name: 'éléphant',
   },
   {
-    imageUrl: 'https://cdn-icons-png.flaticon.com/512/3069/3069172.png',
+    imageUrl: 'assets/koala.png',
     name: 'koala',
   },
+  {
+    imageUrl: 'assets/lion.png',
+    name: 'lyon',
+  },
+  {
+    imageUrl: 'assets/tiger.png',
+    name: 'tigre',
+  },
+  /*{
+    imageUrl: 'assets/zebra.png',
+    name: 'zebra',
+  },
+  {
+    imageUrl: 'assets/giraffe.png',
+    name: 'girafe',
+  },
+  {
+    imageUrl: 'assets/panda.png',
+    name: 'panda',
+  },*/
 ];
 
 function shuffleAnimals(animals) {

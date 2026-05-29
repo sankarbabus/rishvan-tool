@@ -53,7 +53,7 @@ function VoiceQuizView({
         <img
           src={currentAnimal.imageUrl}
           alt={currentAnimal.name}
-          width="100"
+          width="350"
           className="animal-image"
         />
       )}
