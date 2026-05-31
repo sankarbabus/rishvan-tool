@@ -1,5 +1,6 @@
 import '../App.css';
 
+import { QUIZ_LOOP_COUNT, REWARDS } from '../config/quizConfig';
 import QuizReward from './QuizReward';
 
 const FEEDBACK_MESSAGES = {
@@ -8,13 +9,23 @@ const FEEDBACK_MESSAGES = {
   wrong: (transcript) => `[${transcript}] is Wrongly DETECTED, try again!`,
 };
 
-function getFeedbackMessage(quizStatus, feedback, transcript, totalRounds) {
+function getFeedbackMessage(
+  quizStatus,
+  feedback,
+  transcript,
+  totalRounds,
+  totalLoops
+) {
   if (quizStatus === 'idle') {
     return 'Press Start quiz to begin!';
   }
 
-  if (quizStatus === 'complete') {
-    return `You finished all ${totalRounds} animals! Great job!`;
+  if (quizStatus === 'reward') {
+    return 'Great job! Enjoy your reward.';
+  }
+
+  if (quizStatus === 'all_complete') {
+    return `You finished all ${totalLoops} loops! Great job!`;
   }
 
   if (feedback === 'idle') {
@@ -27,6 +38,8 @@ function getFeedbackMessage(quizStatus, feedback, transcript, totalRounds) {
 
 function VoiceQuizView({
   quizStatus,
+  currentLoop,
+  totalLoops,
   currentRound,
   totalRounds,
   isListening,
@@ -34,14 +47,31 @@ function VoiceQuizView({
   currentAnimal,
   startQuiz,
   feedback,
+  currentReward,
+  advanceAfterReward,
+  isConfigValid,
 }) {
-  const showStartButton = quizStatus === 'idle' || quizStatus === 'complete';
-  const isComplete = quizStatus === 'complete';
+  const showStartButton =
+    isConfigValid && (quizStatus === 'idle' || quizStatus === 'all_complete');
+  const isReward = quizStatus === 'reward';
   const isInProgress = quizStatus === 'in_progress';
 
   return (
     <div className="voice-quiz">
       <h1>Voice Recognition Demo</h1>
+
+      {!isConfigValid && (
+        <p className="quiz-config-error">
+          Quiz config error: REWARDS length ({REWARDS.length}) must match
+          QUIZ_LOOP_COUNT ({QUIZ_LOOP_COUNT}).
+        </p>
+      )}
+
+      {isInProgress && (
+        <p className="quiz-progress">
+          Loop {currentLoop} of {totalLoops}
+        </p>
+      )}
 
       {isInProgress && (
         <p className="quiz-progress">
@@ -64,13 +94,23 @@ function VoiceQuizView({
         </p>
       )}
 
-      {!isComplete && (
+      {!isReward && (
         <h2>Heard: {transcript || '...'}</h2>
       )}
 
-      <h1>{getFeedbackMessage(quizStatus, feedback, transcript, totalRounds)}</h1>
+      <h1>
+        {getFeedbackMessage(
+          quizStatus,
+          feedback,
+          transcript,
+          totalRounds,
+          totalLoops
+        )}
+      </h1>
 
-      {isComplete && <QuizReward />}
+      {isReward && (
+        <QuizReward reward={currentReward} onComplete={advanceAfterReward} />
+      )}
 
       {showStartButton && (
         <button className="listen-button" onClick={startQuiz}>

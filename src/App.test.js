@@ -25,6 +25,6 @@ test('renders voice quiz UI', () => {
   render(<App />);
 
   expect(screen.getByText('Voice Recognition Demo')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Start Listening' })).toBeInTheDocument();
-  expect(screen.getByText('START SPEAKING!')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Start quiz' })).toBeInTheDocument();
+  expect(screen.getByText('Press Start quiz to begin!')).toBeInTheDocument();
 });

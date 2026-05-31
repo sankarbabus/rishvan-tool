@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import correctSound from '../audio/correctAnswer.mp3';
 import wrongSound from '../audio/wrongAnswer.mp3';
-import { QUIZ_ROUND_COUNT } from '../config/quizConfig';
+import {
+  QUIZ_LOOP_COUNT,
+  QUIZ_ROUND_COUNT,
+  REWARDS,
+} from '../config/quizConfig';
 import { createQuizQueue } from '../data/animals';
 import { playSound } from '../utils/playSound';
 
@@ -12,8 +16,13 @@ function isCorrectAnswer(transcript, expectedName) {
   return transcript.trim().toLowerCase() === expectedName.toLowerCase();
 }
 
+export function isQuizConfigValid() {
+  return REWARDS.length === QUIZ_LOOP_COUNT;
+}
+
 export function useAnimalVoiceQuiz() {
   const [quizStatus, setQuizStatus] = useState('idle');
+  const [loopIndex, setLoopIndex] = useState(0);
   const [roundIndex, setRoundIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -21,6 +30,7 @@ export function useAnimalVoiceQuiz() {
   const [feedback, setFeedback] = useState('idle');
 
   const quizQueueRef = useRef([]);
+  const loopIndexRef = useRef(0);
   const roundIndexRef = useRef(0);
   const currentAnimalNameRef = useRef('');
   const quizStatusRef = useRef('idle');
@@ -40,6 +50,10 @@ export function useAnimalVoiceQuiz() {
   useEffect(() => {
     quizStatusRef.current = quizStatus;
   }, [quizStatus]);
+
+  useEffect(() => {
+    loopIndexRef.current = loopIndex;
+  }, [loopIndex]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -94,8 +108,8 @@ export function useAnimalVoiceQuiz() {
           loadRound(nextRoundIndex);
           shouldRestartRef.current = true;
         } else {
-          quizStatusRef.current = 'complete';
-          setQuizStatus('complete');
+          quizStatusRef.current = 'reward';
+          setQuizStatus('reward');
         }
       } else {
         setFeedback('wrong');
@@ -140,16 +154,7 @@ export function useAnimalVoiceQuiz() {
     };
   }, [loadRound]);
 
-  const startQuiz = useCallback(() => {
-    if (!recognitionRef.current || quizStatusRef.current === 'in_progress') {
-      return;
-    }
-
-    if (restartTimeoutRef.current) {
-      clearTimeout(restartTimeoutRef.current);
-      restartTimeoutRef.current = null;
-    }
-
+  const startNextLoop = useCallback(() => {
     quizQueueRef.current = createQuizQueue(QUIZ_ROUND_COUNT);
     shouldRestartRef.current = false;
     isProcessingResultRef.current = false;
@@ -163,8 +168,50 @@ export function useAnimalVoiceQuiz() {
     recognitionRef.current.start();
   }, [loadRound]);
 
+  const advanceAfterReward = useCallback(() => {
+    if (quizStatusRef.current !== 'reward') {
+      return;
+    }
+
+    const nextLoopIndex = loopIndexRef.current + 1;
+
+    if (nextLoopIndex < QUIZ_LOOP_COUNT) {
+      loopIndexRef.current = nextLoopIndex;
+      setLoopIndex(nextLoopIndex);
+      startNextLoop();
+      return;
+    }
+
+    quizStatusRef.current = 'all_complete';
+    setQuizStatus('all_complete');
+  }, [startNextLoop]);
+
+  const startQuiz = useCallback(() => {
+    if (
+      !recognitionRef.current ||
+      quizStatusRef.current === 'in_progress' ||
+      quizStatusRef.current === 'reward' ||
+      !isQuizConfigValid()
+    ) {
+      return;
+    }
+
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+
+    loopIndexRef.current = 0;
+    setLoopIndex(0);
+    startNextLoop();
+  }, [startNextLoop]);
+
+  const currentReward = isQuizConfigValid() ? REWARDS[loopIndex] : null;
+
   return {
     quizStatus,
+    currentLoop: loopIndex + 1,
+    totalLoops: QUIZ_LOOP_COUNT,
     currentRound: roundIndex + 1,
     totalRounds: QUIZ_ROUND_COUNT,
     isListening,
@@ -172,5 +219,8 @@ export function useAnimalVoiceQuiz() {
     currentAnimal,
     startQuiz,
     feedback,
+    currentReward,
+    advanceAfterReward,
+    isConfigValid: isQuizConfigValid(),
   };
-};
+}

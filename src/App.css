@@ -50,8 +50,22 @@
   border-radius: 8px;
 }
 
-.quiz-reward--error {
+.quiz-reward--error,
+.quiz-config-error {
   color: #b00020;
   font-size: 16px;
   text-align: center;
+}
+
+.quiz-reward__skip {
+  display: block;
+  margin: 16px auto 0;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.quiz-reward__embed > div {
+  width: 100%;
+  height: 100%;
 }

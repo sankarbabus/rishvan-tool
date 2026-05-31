@@ -1,13 +1,39 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 
-import {
-  REWARD_LOCAL_VIDEO_PATH,
-  REWARD_TYPE,
-  REWARD_YOUTUBE_URL,
-} from '../config/quizConfig';
 import { extractYouTubeVideoId } from '../utils/youtube';
 
-function LocalRewardVideo({ src }) {
+const YOUTUBE_IFRAME_API_SRC = 'https://www.youtube.com/iframe_api';
+
+function loadYouTubeIframeApi() {
+  if (window.YT && window.YT.Player) {
+    return Promise.resolve(window.YT);
+  }
+
+  if (window.__youtubeIframeApiPromise) {
+    return window.__youtubeIframeApiPromise;
+  }
+
+  window.__youtubeIframeApiPromise = new Promise((resolve) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousReady === 'function') {
+        previousReady();
+      }
+      resolve(window.YT);
+    };
+
+    if (!document.querySelector(`script[src="${YOUTUBE_IFRAME_API_SRC}"]`)) {
+      const script = document.createElement('script');
+      script.src = YOUTUBE_IFRAME_API_SRC;
+      document.body.appendChild(script);
+    }
+  });
+
+  return window.__youtubeIframeApiPromise;
+}
+
+function LocalRewardVideo({ src, onComplete }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +51,7 @@ function LocalRewardVideo({ src }) {
         })
         .catch(() => {});
     });
-  }, []);
+  }, [src]);
 
   return (
     <video
@@ -35,13 +61,83 @@ function LocalRewardVideo({ src }) {
       controls
       playsInline
       autoPlay
+      onEnded={onComplete}
     />
   );
 }
 
-function QuizReward({ title = 'Your reward!' }) {
-  if (REWARD_TYPE === 'youtube') {
-    const videoId = extractYouTubeVideoId(REWARD_YOUTUBE_URL);
+function YouTubeRewardPlayer({ videoId, title, onComplete }) {
+  const playerContainerId = useId().replace(/:/g, '');
+  const playerRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    loadYouTubeIframeApi().then((YT) => {
+      if (!isMounted) {
+        return;
+      }
+
+      playerRef.current = new YT.Player(playerContainerId, {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          rel: 0,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              onComplete();
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      isMounted = false;
+      if (playerRef.current?.destroy) {
+        playerRef.current.destroy();
+      }
+      playerRef.current = null;
+    };
+  }, [playerContainerId, videoId, onComplete]);
+
+  return (
+    <div className="quiz-reward__embed">
+      <div id={playerContainerId} title={title} />
+    </div>
+  );
+}
+
+function QuizReward({ reward, onComplete, title = 'Your reward!' }) {
+  const hasCompletedRef = useRef(false);
+
+  const handleComplete = useCallback(() => {
+    if (hasCompletedRef.current) {
+      return;
+    }
+
+    hasCompletedRef.current = true;
+    onComplete();
+  }, [onComplete]);
+
+  useEffect(() => {
+    hasCompletedRef.current = false;
+  }, [reward]);
+
+  if (!reward) {
+    return (
+      <p className="quiz-reward quiz-reward--error">
+        Reward video is not configured.
+      </p>
+    );
+  }
+
+  if (reward.type === 'youtube') {
+    const videoId = extractYouTubeVideoId(reward.url);
 
     if (!videoId) {
       return (
@@ -51,29 +147,26 @@ function QuizReward({ title = 'Your reward!' }) {
       );
     }
 
-    const embedParams = new URLSearchParams({
-      autoplay: '1',
-      rel: '0',
-      playsinline: '1',
-      origin: window.location.origin,
-    });
-
     return (
       <div className="quiz-reward">
-        <div className="quiz-reward__embed">
-          <iframe
-            src={`https://www.youtube.com/embed/${videoId}?${embedParams}`}
-            title={title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        <YouTubeRewardPlayer
+          videoId={videoId}
+          title={title}
+          onComplete={handleComplete}
+        />
+        <button
+          type="button"
+          className="quiz-reward__skip"
+          onClick={handleComplete}
+        >
+          Skip reward
+        </button>
       </div>
     );
   }
 
-  if (REWARD_TYPE === 'local') {
-    if (!REWARD_LOCAL_VIDEO_PATH) {
+  if (reward.type === 'local') {
+    if (!reward.path) {
       return (
         <p className="quiz-reward quiz-reward--error">
           Reward video is not configured.
@@ -83,7 +176,14 @@ function QuizReward({ title = 'Your reward!' }) {
 
     return (
       <div className="quiz-reward">
-        <LocalRewardVideo src={REWARD_LOCAL_VIDEO_PATH} />
+        <LocalRewardVideo src={reward.path} onComplete={handleComplete} />
+        <button
+          type="button"
+          className="quiz-reward__skip"
+          onClick={handleComplete}
+        >
+          Skip reward
+        </button>
       </div>
     );
   }
