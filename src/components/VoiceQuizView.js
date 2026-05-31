@@ -1,6 +1,5 @@
 import '../App.css';
 
-import { QUIZ_LOOP_COUNT, REWARDS } from '../config/quizConfig';
 import QuizReward from './QuizReward';
 
 const FEEDBACK_MESSAGES = {
@@ -62,8 +61,7 @@ function VoiceQuizView({
 
       {!isConfigValid && (
         <p className="quiz-config-error">
-          Quiz config error: REWARDS length ({REWARDS.length}) must match
-          QUIZ_LOOP_COUNT ({QUIZ_LOOP_COUNT}).
+          Quiz config error: add at least one reward to REWARDS.
         </p>
       )}
 

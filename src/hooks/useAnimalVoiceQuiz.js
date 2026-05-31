@@ -16,8 +16,13 @@ function isCorrectAnswer(transcript, expectedName) {
   return transcript.trim().toLowerCase() === expectedName.toLowerCase();
 }
 
+function pickRandomReward() {
+  const index = Math.floor(Math.random() * REWARDS.length);
+  return REWARDS[index];
+}
+
 export function isQuizConfigValid() {
-  return REWARDS.length === QUIZ_LOOP_COUNT;
+  return REWARDS.length > 0;
 }
 
 export function useAnimalVoiceQuiz() {
@@ -27,6 +32,7 @@ export function useAnimalVoiceQuiz() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [currentAnimal, setCurrentAnimal] = useState(null);
+  const [currentReward, setCurrentReward] = useState(null);
   const [feedback, setFeedback] = useState('idle');
 
   const quizQueueRef = useRef([]);
@@ -108,6 +114,7 @@ export function useAnimalVoiceQuiz() {
           loadRound(nextRoundIndex);
           shouldRestartRef.current = true;
         } else {
+          setCurrentReward(pickRandomReward());
           quizStatusRef.current = 'reward';
           setQuizStatus('reward');
         }
@@ -203,10 +210,9 @@ export function useAnimalVoiceQuiz() {
 
     loopIndexRef.current = 0;
     setLoopIndex(0);
+    setCurrentReward(null);
     startNextLoop();
   }, [startNextLoop]);
-
-  const currentReward = isQuizConfigValid() ? REWARDS[loopIndex] : null;
 
   return {
     quizStatus,
